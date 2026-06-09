@@ -1,0 +1,187 @@
+.title {
+    font-size: 70px;
+    text-align: center;
+    color: #fffff3;
+}
+
+.mode-select {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 600px;
+}
+
+.mode-select-title {
+    font-size: 45px;
+}
+
+.normal-mode, .genre-mode {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-top: 20px;
+}
+
+.genre-mode {
+    margin-top: 40px;
+}
+
+.normal-select, .genre-select {
+    font-size: 35px;
+}
+
+.mode-popular, .mode-emo {
+    width: 300px;
+    padding: 10px;
+    margin-top: 20px;
+    margin-bottom: 20px;
+    font-size: 40px;
+    font-weight: bold;
+    border: solid 2px black;
+    border-radius: 20px;
+    color: #fffff3;
+    cursor: pointer;
+    background-color: #cbcbcb35;
+}
+
+.mode-popular:hover, 
+.mode-emo:hover {
+    opacity: 0.8;
+    transform: scale(0.98);
+}
+
+.mode-popular:active, 
+.mode-emo:active {
+    transform: scale(0.94);
+}
+
+.loading {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 600px;
+}
+
+.loading-message {
+    color: black;
+    font-size: 35px;
+}
+
+.header {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.score {
+    font-size: 30px;
+    color: #fffff3;
+    text-align: right;
+}
+
+.game-question {
+    font-size: 35px;
+    color: black;
+    flex: 1;
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+.exit {
+    font-size: 20px;
+    font-weight: bold;
+    border: none;
+    color: #fffff3;
+    cursor: pointer;
+    text-decoration: underline;
+    background-color: transparent;
+}
+
+.exit:hover {
+    opacity: 0.4;
+    transform: scale(0.98);
+}
+
+.exit:active {
+    transform: scale(0.94);
+}
+
+.page-container {
+    display: flex;
+    justify-content: space-evenly;
+    align-items: stretch;
+}
+
+.left-side, 
+.right-side {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 350px;
+    height: 550px;
+    background-color: #cbcbcb35;
+    border: solid 2px black;
+    border-radius: 50px;
+    padding: 30px;
+    color: #fffff3;
+}
+
+.left, 
+.right {
+    width: 150px;
+    padding: 10px;
+    margin-top: 20px;
+    margin-bottom: 20px;
+    font-size: 30px;
+    font-weight: bold;
+    border: none;
+    border-radius: 20px;
+    color: black;
+    cursor: pointer;
+}
+
+.left:hover, 
+.right:hover {
+    opacity: 0.8;
+    transform: scale(0.98);
+}
+
+.left:active, 
+.right:active {
+    transform: scale(0.94);
+}
+
+.left-side img, 
+.right-side img {
+    margin-top: 20px;
+    margin-bottom: 20px;
+    width: 27vh;
+    height: 27vh;
+}
+
+.artist-info {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    justify-content: center;
+    text-align: center;
+}
+
+.artist-info h1 {
+    font-size: 25px;
+    margin-bottom: 15px;
+}
+
+.artist-info p {
+    font-size: 20px;
+}
+
+.user-message {
+    font-size: 30px;
+    text-align: center;
+    margin-top: 20px;
+    color: #fffff3;
+}
