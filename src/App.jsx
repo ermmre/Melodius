@@ -3,59 +3,44 @@ import './App.css'
 
 function App() {
     const [mode, setMode] = useState(null);
-    const [tracks, setTracks] = useState([]);
     const [trackPair, setTrackPair] = useState([null, null]);
+    const [seenPairs, setSeenPairs] = useState(new Set());
     const [message, setMessage] = useState('');
     const [correct, setCorrect] = useState(0);
     const [loading, setLoading] = useState(true);
-
+    
+    
+    const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
     const fetchTracks = async () => {
         const endpoint = mode === 'emo' ? '/api/spotify/emo' : '/api/spotify';
-        const response = await fetch(`http://localhost:3001${endpoint}`);
-        const trackArray = await response.json();
-        
-        return trackArray;
+        const response = await fetch(`${BASE_URL}${endpoint}`);
+        return await response.json(); 
     }
 
-    const pickPair = (pool) => {
-        const shuffled = [...pool].sort(() => Math.random() - 0.5);
-        
-        return {
-            pair: shuffled.slice(0, 2),
-            remaining: shuffled.slice(2)
-        };
-    }
+    const getUnseenPair = async () => {
+        let pair = await fetchTracks();
+        let attempts = 0;
 
-    const findClosePair = (pool, maxDiff = 5) => {
-        const sorted = [...pool].sort((a, b) => a.trackPopularity - b.trackPopularity);
-        
-        const closePairs = [];
-        for (let i = 0; i < sorted.length - 1; i++) {
-            for (let j = i + 1; j < sorted.length; j++) {
-                if (sorted[j].trackPopularity - sorted[i].trackPopularity > maxDiff) break;
-                closePairs.push([sorted[i], sorted[j]]);
+        while (attempts < 10) {
+            const key = [pair[0].trackID, pair[1].trackID].sort().join('-');
+            if (!seenPairs.has(key)) {
+                setSeenPairs(prev => new Set(prev).add(key));
+                return pair;
             }
+            pair = await fetchTracks();
+            attempts++;
         }
 
-        if (closePairs.length > 0) {
-            const pair = closePairs[Math.floor(Math.random() * closePairs.length)];
-            const shuffledPair = Math.random() > 0.5 ? pair : [pair[1], pair[0]];
-            const remaining = pool.filter(track => !pair.includes(track));
-            return { pair: shuffledPair, remaining };
-        }
-        
-        return pickPair(pool);
+        return pair;
     };
 
     useEffect(() => {
         if (!mode) return;
         const init = async () => {
             try {
-                const trackArray = await fetchTracks();
-                const { pair, remaining } = findClosePair(trackArray);
-                setTracks(remaining);
-                setTrackPair(pair)
-                setLoading(false)
+                const pair = await getUnseenPair();
+                setTrackPair(pair);
+                setLoading(false);
             } catch (error) {
                 console.error("Uh oh", error);
             }
@@ -66,36 +51,28 @@ function App() {
 
     const handleClick = async (choice) => {
         const [trackOne, trackTwo] = trackPair;
-        setMessage("Incorrect!")
-        switch (choice) {
-            case "left":
-                if (trackOne.trackPopularity > trackTwo.trackPopularity) {
-                    setMessage(`Correct!`);
-                    setCorrect(correct => correct + 1);
-                }
-                break;
-            case "right":
-                if (trackTwo.trackPopularity > trackOne.trackPopularity) {
-                    setMessage(`Correct!`);
-                    setCorrect(correct => correct + 1);
-                }
-                break;
-        }
-        
-        let pool = tracks;
-        if (pool.length < 2) {
-            pool = await fetchTracks();
+        const isCorrect =
+        (choice === 'left' && trackOne.trackPopularity > trackTwo.trackPopularity) ||
+        (choice === 'right' && trackTwo.trackPopularity > trackOne.trackPopularity);
+
+        setMessage(
+            `${isCorrect ? 'Correct!' : 'Incorrect!'} 
+            ${trackOne.trackName} (${trackOne.trackPopularity}) vs 
+            ${trackTwo.trackName} (${trackTwo.trackPopularity})`
+        );
+
+        if (isCorrect) {
+            setCorrect(c => c + 1);
         }
 
-        const { pair, remaining } = findClosePair(pool);
-        setTracks(remaining);
+        const pair = await getUnseenPair();
         setTrackPair(pair);
     }
 
     const handleExit = () => {
         setMode(null);
-        setTracks([]);
         setTrackPair([null, null]);
+        setSeenPairs(new Set());
         setMessage('');
         setCorrect(0);
         setLoading(true);
@@ -123,8 +100,6 @@ function App() {
                     </button>
                     <p>A collection of emo songs to compare against each other.</p>
                 </div>
-                
-                
             </div>
             </>
         )
@@ -148,7 +123,7 @@ function App() {
         </div>
         <h1 className="game-question">Which track is more popular?</h1>
         <div className="page-container">
-            <div className="left-side">
+            <div className="left-side" onClick={() => handleClick("left")}>
                 <div className="image">
                     <img src={trackOne.albumURL} alt={trackOne}></img> 
                 </div>
@@ -156,9 +131,8 @@ function App() {
                     <h1>{trackOne.trackName}</h1>
                     <p>{trackOne.artist}</p>
                 </div>
-                <button onClick={() => handleClick("left")} className="left">Left</button>
             </div>
-            <div className="right-side">
+            <div className="right-side" onClick={() => handleClick("right")}>
                 <div className="image">
                     <img src={trackTwo.albumURL} alt={trackTwo}></img> 
                 </div>
@@ -166,7 +140,6 @@ function App() {
                     <h1>{trackTwo.trackName}</h1>
                     <p>{trackTwo.artist}</p>
                 </div>
-                <button onClick={() => handleClick("right")} className="right">Right</button>
             </div>
         </div>
         <p className="user-message">{message}</p>
