@@ -41,10 +41,52 @@ await db.execute(`
     )
 `);
 
+let adjacencyMap = {};
+let trackLookup = {};
+
+const buildAdjacencyMap = async (table = 'popular') => {
+    const [tracks] = await db.execute(`SELECT * FROM ${table}`);
+    const sorted = tracks.sort((a, b) => a.trackPopularity - b.trackPopularity);
+
+    trackLookup[table] = {};
+    for (const track of sorted) {
+        trackLookup[table][track.trackID] = track;
+    }
+
+    adjacencyMap[table] = {};
+    for (let i = 0; i < sorted.length; i++) {
+        adjacencyMap[table][sorted[i].trackID] = [];
+        for (let j = i + 1; j < sorted.length; j++) {
+            const diff = sorted[j].trackPopularity - sorted[i].trackPopularity;
+            if (diff > 5) break;
+            if (diff >= 1) adjacencyMap[table][sorted[i].trackID].push(sorted[j].trackID);
+        }
+    }
+};
+
+const getClosePair = (table = 'popular') => {
+    const map = adjacencyMap[table];
+    const lookup = trackLookup[table];
+
+    const keys = Object.keys(map).filter(id => 
+        map[id].length > 0 && 
+        map[id].some(neighbourId => lookup[neighbourId].trackPopularity !== lookup[id].trackPopularity)
+    );
+
+    if (keys.length === 0) return null;
+
+    const randomKey = keys[Math.floor(Math.random() * keys.length)];
+    const neighbours = map[randomKey];
+
+    const randomNeighbour = neighbours[Math.floor(Math.random() * neighbours.length)];
+
+    const pair = [lookup[randomKey], lookup[randomNeighbour]];
+    return Math.random() > 0.5 ? pair : [pair[1], pair[0]];
+};
+
 const KEY = process.env.VITE_SPOTIFY_CLIENT_ID;
 const SECRET = process.env.VITE_SPOTIFY_SECRET;
 
-// communicate with the Spotify API to get an access token
 const accessToken = async () => {
     const reponse = await axios({
         method: 'POST',
@@ -147,24 +189,6 @@ const populatePool = async (table = 'popular', minPop = 70, maxPop = 100, querie
     await insertTrack(allTracks, table);
 }
 
-const getRandomTracks = async (table = 'popular', minPop = 70, maxPop = 100) => {
-    const MIN_POOL_SIZE = 100;
-    const [[{ count }]] = await db.execute(
-        `SELECT COUNT(*) AS count FROM ${table} WHERE trackPopularity BETWEEN ? AND ?`,
-        [minPop, maxPop]
-    );
-
-    if (count < MIN_POOL_SIZE) {
-        await populatePool(table, minPop, maxPop);
-    }
-
-    const [tracks] = await db.execute(
-        `SELECT * FROM ${table} WHERE trackPopularity BETWEEN ? AND ? ORDER BY RAND() LIMIT 50`,
-        [minPop, maxPop]
-    );
-    return tracks;
-};
-
 const initializePool = async () => {
     const [[{ count }]] = await db.execute('SELECT COUNT(*) AS count FROM popular');
     const [[{ count: emoCount }]] = await db.execute('SELECT COUNT(*) AS count FROM emo');
@@ -184,11 +208,14 @@ const initializePool = async () => {
             populatePool('emo', 40, 69, EMO_QUERIES()),
         ]);
     }
+
+    await buildAdjacencyMap('popular');
+    await buildAdjacencyMap('emo');
 };
 
 app.get('/api/spotify', async (req, res) => {
     try {
-        const tracks = await getRandomTracks('popular', 70, 100);
+        const tracks = await getClosePair('popular');
         res.json(tracks);
     } catch (err) {
         console.error('Error fetching tracks:', err);
@@ -198,7 +225,7 @@ app.get('/api/spotify', async (req, res) => {
 
 app.get('/api/spotify/emo', async (req, res) => {
     try {
-        const tracks = await getRandomTracks('emo', 40, 69);
+        const tracks = await getClosePair('emo');
         res.json(tracks);
     } catch (err) {
         console.error('Error fetching tracks:', err);
@@ -209,6 +236,7 @@ app.get('/api/spotify/emo', async (req, res) => {
 app.post('/api/spotify/populate', async (req, res) => {
     try {
         await populatePool('popular', 70, 100, POPULAR_QUERIES());
+        await buildAdjacencyMap('popular');
         const [[{ count }]] = await db.execute('SELECT COUNT(*) AS count FROM popular');
         res.json({ message: 'Popular pool updated', total: count });
     } catch (err) {
@@ -220,6 +248,7 @@ app.post('/api/spotify/populate', async (req, res) => {
 app.post('/api/spotify/populate/emo', async (req, res) => {
     try {
         await populatePool('emo', 40, 69, EMO_QUERIES());
+        await buildAdjacencyMap('emo');
         const [[{ count }]] = await db.execute('SELECT COUNT(*) AS count FROM emo');
         res.json({ message: 'Emo pool updated', total: count });
     } catch (err) {
