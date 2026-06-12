@@ -2,6 +2,7 @@
     font-size: 70px;
     text-align: center;
     color: #fffff3;
+    margin-bottom: 40px;
 }
 
 .mode-select {
@@ -10,13 +11,14 @@
     align-items: center;
     justify-content: center;
     height: 600px;
+    text-align: center;
 }
 
 .mode-select-title {
     font-size: 45px;
 }
 
-.normal-mode, .genre-mode {
+.mode-select-content {
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -28,11 +30,11 @@
     margin-top: 40px;
 }
 
-.normal-select, .genre-select {
+.select {
     font-size: 35px;
 }
 
-.mode-popular, .mode-emo {
+.mode-button {
     width: 300px;
     padding: 10px;
     margin-top: 20px;
@@ -46,14 +48,12 @@
     background-color: #cbcbcb35;
 }
 
-.mode-popular:hover, 
-.mode-emo:hover {
+.mode-button:hover {
     opacity: 0.8;
     transform: scale(0.98);
 }
 
-.mode-popular:active, 
-.mode-emo:active {
+.mode-button:active {
     transform: scale(0.94);
 }
 

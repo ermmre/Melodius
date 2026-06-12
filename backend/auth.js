@@ -41,6 +41,18 @@ await db.execute(`
     )
 `);
 
+await db.execute(
+    `
+    CREATE TABLE IF NOT EXISTS 2000s (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        trackID VARCHAR(255) UNIQUE,
+        trackName VARCHAR(255),
+        artist VARCHAR(255),
+        trackPopularity INT,
+        albumURL TEXT 
+    )
+`);
+
 let adjacencyMap = {};
 let trackLookup = {};
 
@@ -154,6 +166,14 @@ const EMO_QUERIES = () => [
     `genre:alternative-rock ${randomChar()}`,
 ];
 
+const Y2K_QUERIES = () => [
+    `genre:pop year:2000-2009 ${randomChar()}`,
+    `genre:pop-punk year:2000-2009 ${randomChar()}`,
+    `genre:alternative-rock year:2000-2009 ${randomChar()}`,
+    `genre:hip-hop year:2000-2009 ${randomChar()}`,
+    `genre:r-n-b year:2000-2009 ${randomChar()}`,
+];
+
 const populatePool = async (table = 'popular', minPop = 70, maxPop = 100, queries = POPULAR_QUERIES()) => {
     const token = await accessToken();   
     const allTracks = [];
@@ -192,6 +212,7 @@ const populatePool = async (table = 'popular', minPop = 70, maxPop = 100, querie
 const initializePool = async () => {
     const [[{ count }]] = await db.execute('SELECT COUNT(*) AS count FROM popular');
     const [[{ count: emoCount }]] = await db.execute('SELECT COUNT(*) AS count FROM emo');
+    const [[{ count: count2000s }]] = await db.execute('SELECT COUNT(*) AS count FROM 2000s');
 
     if (count === 0) {
         await Promise.all([
@@ -209,11 +230,20 @@ const initializePool = async () => {
         ]);
     }
 
+    if (count2000s === 0 ) {
+        await Promise.all([
+            populatePool('2000s', 60, 100, Y2K_QUERIES()),
+            populatePool('2000s', 60, 100, Y2K_QUERIES()),
+            populatePool('2000s', 60, 100, Y2K_QUERIES()),
+        ]);
+    }
+
     await buildAdjacencyMap('popular');
     await buildAdjacencyMap('emo');
+    await buildAdjacencyMap('2000s')
 };
 
-app.get('/api/spotify', async (req, res) => {
+app.get('/api/popular', async (req, res) => {
     try {
         const tracks = await getClosePair('popular');
         res.json(tracks);
@@ -223,7 +253,7 @@ app.get('/api/spotify', async (req, res) => {
     }
 });
 
-app.get('/api/spotify/emo', async (req, res) => {
+app.get('/api/emo', async (req, res) => {
     try {
         const tracks = await getClosePair('emo');
         res.json(tracks);
@@ -233,7 +263,17 @@ app.get('/api/spotify/emo', async (req, res) => {
     }
 });
 
-app.post('/api/spotify/populate', async (req, res) => {
+app.get('/api/2000s', async (req, res) => {
+    try {
+        const tracks = await getClosePair('2000s');
+        res.json(tracks);
+    } catch (err) {
+        console.error('Error fetching tracks:', err);
+        res.status(500).json({ error: 'Failed to fetch 2000s tracks' });
+    }
+});
+
+app.post('/api/populate', async (req, res) => {
     try {
         await populatePool('popular', 70, 100, POPULAR_QUERIES());
         await buildAdjacencyMap('popular');
@@ -245,7 +285,7 @@ app.post('/api/spotify/populate', async (req, res) => {
     }
 });
 
-app.post('/api/spotify/populate/emo', async (req, res) => {
+app.post('/api/populate/emo', async (req, res) => {
     try {
         await populatePool('emo', 40, 69, EMO_QUERIES());
         await buildAdjacencyMap('emo');
@@ -254,6 +294,18 @@ app.post('/api/spotify/populate/emo', async (req, res) => {
     } catch (err) {
         console.error(err)
         res.status(500).json({ error: 'Failed to populate emo pool' });
+    }
+});
+
+app.post('/api/populate/2000s', async (req, res) => {
+    try {
+        await populatePool('emo', 60, 100, Y2K_QUERIES());
+        await buildAdjacencyMap('emo');
+        const [[{ count }]] = await db.execute('SELECT COUNT(*) AS count FROM 2000s');
+        res.json({ message: '2000s pool updated', total: count });
+    } catch (err) {
+        console.error(err)
+        res.status(500).json({ error: 'Failed to populate 2000s pool' });
     }
 });
 

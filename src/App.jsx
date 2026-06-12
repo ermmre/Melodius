@@ -12,7 +12,10 @@ function App() {
     
     const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
     const fetchTracks = async () => {
-        const endpoint = mode === 'emo' ? '/api/spotify/emo' : '/api/spotify';
+        const endpoint = 
+        mode === 'emo' ? '/api/emo' :
+        mode === '2000s' ? '/api/2000s' : 
+        '/api/popular';
         const response = await fetch(`${BASE_URL}${endpoint}`);
         return await response.json(); 
     }
@@ -86,19 +89,25 @@ function App() {
             <h1 className="title">Melodius</h1>
             <div className="mode-select">
                 <h2 className="mode-select-title">Mode Select</h2>
-                <div className="normal-mode">
-                    <h2 className="normal-select">Normal</h2>
-                    <button className="mode-popular" onClick={() => setMode('popular')}>
+                <div className="mode-select-content">
+                    <h2 className="select">Normal</h2>
+                    <button className="mode-button" onClick={() => setMode('popular')}>
                         ♾️ Infinite
                     </button>
                     <p>These are songs people have in their current rotation from every genre!</p>
                 </div>
-                <div className="genre-mode">
-                    <h2 className="genre-select ">Genre</h2>
-                    <button className="mode-emo" onClick={() => setMode('emo')}>
+                <div className="mode-select-content">
+                    <h2 className="select ">Genre</h2>
+                    <button className="mode-button" onClick={() => setMode('emo')}>
                         🖤 Emo
                     </button>
                     <p>A collection of emo songs to compare against each other.</p>
+                </div>
+                <div className="mode-select-content">
+                    <h2 className="select">Year</h2>
+                    <button className="mode-button" onClick={() => setMode('2000s')}>
+                        🤩 2000s
+                    </button>
                 </div>
             </div>
             </>
