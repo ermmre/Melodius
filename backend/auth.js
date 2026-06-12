@@ -299,8 +299,8 @@ app.post('/api/populate/emo', async (req, res) => {
 
 app.post('/api/populate/2000s', async (req, res) => {
     try {
-        await populatePool('emo', 60, 100, Y2K_QUERIES());
-        await buildAdjacencyMap('emo');
+        await populatePool('2000s', 60, 100, Y2K_QUERIES());
+        await buildAdjacencyMap('2000s');
         const [[{ count }]] = await db.execute('SELECT COUNT(*) AS count FROM 2000s');
         res.json({ message: '2000s pool updated', total: count });
     } catch (err) {
