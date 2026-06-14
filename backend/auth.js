@@ -4,12 +4,21 @@ import express from 'express'
 import cors from 'cors';
 import process from 'process';
 import mysql from 'mysql2/promise'
+import rateLimit from 'express-rate-limit';
 
 dotenv.config();
 
 const app = express();
 const port = 3001;
-app.use(cors());
+const limiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 100
+});
+
+app.use(limiter);
+app.use(cors({
+    origin: 'https://ermmre.github.io'
+}))
 
 const db = await mysql.createPool({
     host: process.env.DB_HOST,
@@ -274,6 +283,9 @@ app.get('/api/2000s', async (req, res) => {
 });
 
 app.post('/api/populate', async (req, res) => {
+    if (req.headers['x-admin-key'] !== process.env.ADMIN_KEY) {
+        return res.status(401).json({ error: 'Unauthorized' });
+    }
     try {
         await populatePool('popular', 70, 100, POPULAR_QUERIES());
         await buildAdjacencyMap('popular');
@@ -286,6 +298,9 @@ app.post('/api/populate', async (req, res) => {
 });
 
 app.post('/api/populate/emo', async (req, res) => {
+    if (req.headers['x-admin-key'] !== process.env.ADMIN_KEY) {
+        return res.status(401).json({ error: 'Unauthorized' });
+    }
     try {
         await populatePool('emo', 40, 69, EMO_QUERIES());
         await buildAdjacencyMap('emo');
@@ -298,6 +313,9 @@ app.post('/api/populate/emo', async (req, res) => {
 });
 
 app.post('/api/populate/2000s', async (req, res) => {
+    if (req.headers['x-admin-key'] !== process.env.ADMIN_KEY) {
+        return res.status(401).json({ error: 'Unauthorized' });
+    }
     try {
         await populatePool('2000s', 60, 100, Y2K_QUERIES());
         await buildAdjacencyMap('2000s');
