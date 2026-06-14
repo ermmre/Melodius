@@ -132,21 +132,26 @@ function App() {
                     <button className="mode-button" onClick={() => setMode('popular')}>
                         Infinite
                     </button>
-                    <p>These are songs people have in their current rotation from every genre!</p>
+                    <p>Collection of songs in current rotation.</p>
+                    <span className="mode-badge">Every genre · No limits</span>
                 </div>
-                <div className="mode-select-content">
-                    <h2 className="select ">Genre</h2>
-                    <button className="mode-button" onClick={() => setMode('emo')}>
-                        Emo
-                    </button>
-                    <p>A collection of emo songs to compare against each other.</p>
-                </div>
-                <div className="mode-select-content">
-                    <h2 className="select">Year</h2>
-                    <button className="mode-button" onClick={() => setMode('2000s')}>
-                        2000s
-                    </button>
-                    <p>A collection of 2000s songs to compare against each other.</p>
+                <div className="mode-row">
+                    <div className="mode-select-content">
+                        <h2 className="select ">Genre</h2>
+                        <button className="mode-button" onClick={() => setMode('emo')}>
+                            Emo
+                        </button>
+                        <p>A collection of emo songs to compare.</p>
+                        <span className="mode-badge">Pop-punk · Post-hardcore · Screamo</span>
+                    </div>
+                    <div className="mode-select-content">
+                        <h2 className="select ">Year</h2>
+                        <button className="mode-button" onClick={() => setMode('2000s')}>
+                            2000s
+                        </button>
+                        <p>A collection of 2000s songs to compare.</p>
+                        <span className="mode-badge">Pop · Hip-Hop · Rock · R&B</span>
+                    </div>
                 </div>
             </div>
             </>
@@ -164,7 +169,6 @@ function App() {
 
     return (
         <>
-        <h1 className="title">Melodius</h1>
         <div className="header">
             <button onClick={handleExit} className="exit">← Back</button>
             <div className="stats">
@@ -173,7 +177,9 @@ function App() {
             </div>
             <div className="header-spacer" />
         </div>
-        <h1 className="game-question">{message || 'Which track is more popular?'}</h1>
+        <h1 className={`game-question ${message === 'Correct!' ? 'correct-message' : message === 'Incorrect!' ? 'wrong-message' : ''}`}>
+            {message || 'Which track is more popular?'}
+        </h1>
         <div className="page-container">
             <div className={`left-side ${flashLeft || ''} ${isTransitioning ? 'disabled' : ''}`} onClick={() => handleClick("left")}>
                 <div className="image">
