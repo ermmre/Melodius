@@ -17,7 +17,7 @@ const limiter = rateLimit({
 
 app.use(limiter);
 app.use(cors({
-    origin: 'https://ermmre.github.io'
+    origin: ['https://ermmre.github.io', 'http://localhost:5173']
 }))
 
 const db = await mysql.createPool({
