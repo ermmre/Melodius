@@ -132,36 +132,6 @@ const insertTrack = async (tracks, table = 'tracks') => {
     }
 };
 
-const populateFromPlaylist = async (playlistID, table, minPop = 70, maxPop = 100) => {
-    const token = await accessToken();
-    const allTracks = [];
-    let url = `https://api.spotify.com/v1/playlists/${playlistID}/tracks?limit=100`;
-
-    while (url) {
-        const res = await fetch(url, {
-            headers: { Authorization: 'Bearer ' + token }
-        });
-        const data = await res.json();
-
-        const filtered = data.items
-            .filter(item => item.track && isOriginal(item.track.name))
-            .filter(item => item.track.popularity >= minPop && item.track.popularity <= maxPop)
-            .map(item => ({
-                trackID: item.track.id,
-                trackName: item.track.name,
-                artist: item.track.artists[0].name,
-                trackPopularity: item.track.popularity,
-                albumURL: item.track.album.images[0].url
-            }));
-
-        allTracks.push(...filtered);
-        url = data.next;
-    }
-
-    await insertTrack(allTracks, table);
-    await buildAdjacencyMap(table);
-    console.log(`Added ${allTracks.length} tracks from playlist to ${table}`);
-};
 
 const REMIX_KEYWORDS = [
     'remix', 'remixed', 'slowed', 'reverb', 'sped up', 'speed up',
@@ -247,6 +217,37 @@ const populatePool = async (table = 'popular', minPop = 70, maxPop = 100, querie
     }
     
     await insertTrack(allTracks, table);
+}
+
+const populateFromPlaylist = async (playlistID, table, minPop = 70, maxPop = 100) => {
+    const token = await accessToken();
+    const allTracks = [];
+    let url = `https://api.spotify.com/v1/playlists/${playlistID}/tracks?limit=100`;
+
+    while (url) {
+        const res = await fetch(url, {
+            headers: { Authorization: 'Bearer ' + token }
+        });
+        const data = await res.json();
+
+        const filtered = data.items
+            .filter(item => item.track && isOriginal(item.track.name))
+            .filter(item => item.track.popularity >= minPop && item.track.popularity <= maxPop)
+            .map(item => ({
+                trackID: item.track.id,
+                trackName: item.track.name,
+                artist: item.track.artists[0].name,
+                trackPopularity: item.track.popularity,
+                albumURL: item.track.album.images[0].url
+            }));
+
+        allTracks.push(...filtered);
+        url = data.next;
+    }
+
+    await insertTrack(allTracks, table);
+    await buildAdjacencyMap(table);
+    console.log(`Added ${allTracks.length} tracks from playlist to ${table}`);
 }
 
 const initializePool = async () => {
