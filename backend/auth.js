@@ -272,9 +272,9 @@ const initializePool = async () => {
 
     if (emoCount === 0) {
         await Promise.all([
-            populatePool('emo', 40, 69, EMO_QUERIES()),
-            populatePool('emo', 40, 69, EMO_QUERIES()),
-            populatePool('emo', 40, 69, EMO_QUERIES()),
+            populatePool('emo', 40, 100, EMO_QUERIES()),
+            populatePool('emo', 40, 100, EMO_QUERIES()),
+            populatePool('emo', 40, 100, EMO_QUERIES()),
         ]);
     }
 
