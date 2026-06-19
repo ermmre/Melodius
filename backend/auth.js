@@ -132,6 +132,37 @@ const insertTrack = async (tracks, table = 'tracks') => {
     }
 };
 
+const populateFromPlaylist = async (playlistID, table, minPop = 0, maxPop = 100) => {
+    const token = await accessToken();
+    const allTracks = [];
+    let url = `https://api.spotify.com/v1/playlists/${playlistID}/tracks?limit=100`;
+
+    while (url) {
+        const res = await fetch(url, {
+            headers: { Authorization: 'Bearer ' + token }
+        });
+        const data = await res.json();
+
+        const filtered = data.items
+            .filter(item => item.track && isOriginal(item.track.name))
+            .filter(item => item.track.popularity >= minPop && item.track.popularity <= maxPop)
+            .map(item => ({
+                trackID: item.track.id,
+                trackName: item.track.name,
+                artist: item.track.artists[0].name,
+                trackPopularity: item.track.popularity,
+                albumURL: item.track.album.images[0].url
+            }));
+
+        allTracks.push(...filtered);
+        url = data.next;
+    }
+
+    await insertTrack(allTracks, table);
+    await buildAdjacencyMap(table);
+    console.log(`Added ${allTracks.length} tracks from playlist to ${table}`);
+};
+
 const REMIX_KEYWORDS = [
     'remix', 'remixed', 'slowed', 'reverb', 'sped up', 'speed up',
     'nightcore', 'lofi', 'lo-fi', 'acoustic', 'cover', 'loopable',
@@ -324,6 +355,17 @@ app.post('/api/populate/2000s', async (req, res) => {
     } catch (err) {
         console.error(err)
         res.status(500).json({ error: 'Failed to populate 2000s pool' });
+    }
+});
+
+app.post('/api/populate/playlist', async (req, res) => {
+    try {
+        await populateFromPlaylist('37i9dQZEVXbMDoHDwVN2tF', 'popular', 70, 100);
+        await populateFromPlaylist('37i9dQZF1EIdh6MgVIhb8B', '2000s', 60, 100);
+        res.json({ message: 'Playlist populate done' });
+    } catch (err) {
+        console.log(err)
+        res.status(500).json({ error: 'Failed to populate from playlists' });
     }
 });
 
