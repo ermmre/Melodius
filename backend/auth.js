@@ -222,27 +222,34 @@ const populatePool = async (table = 'popular', minPop = 70, maxPop = 100, querie
 const populateFromPlaylist = async (playlistID, table, minPop = 70, maxPop = 100) => {
     const token = await accessToken();
     const allTracks = [];
-    let url = `https://api.spotify.com/v1/playlists/${playlistID}/tracks?limit=100`;
+    let url = `https://api.spotify.com/v1/playlists/${playlistID}/items?limit=50`;
 
     while (url) {
         const res = await fetch(url, {
             headers: { Authorization: 'Bearer ' + token }
         });
-        const data = await res.json();
 
-        const filtered = data.items
-            .filter(item => item.track && isOriginal(item.track.name))
-            .filter(item => item.track.popularity >= minPop && item.track.popularity <= maxPop)
-            .map(item => ({
-                trackID: item.track.id,
-                trackName: item.track.name,
-                artist: item.track.artists[0].name,
-                trackPopularity: item.track.popularity,
-                albumURL: item.track.album.images[0].url
-            }));
+        const text = await res.text();        
+        try {
+            const data = JSON.parse(text);
+            const filtered = data.items
+                .filter((track) => track.item && track.item.type === 'track' && isOriginal(track.item.name))
+                .filter((track) => track.item.popularity >= minPop && track.item.popularity <= maxPop)
 
-        allTracks.push(...filtered);
-        url = data.next;
+            const tracks = filtered.map((track) => ({
+                    trackID: track.item.id,
+                    trackName: track.item.name,
+                    artist: track.item.artists[0].name,
+                    trackPopularity: track.item.popularity,
+                    albumURL: track.item.album.images[0].url
+                }));
+
+            allTracks.push(...tracks);
+            url = data.next;
+        } catch (err) {
+            console.error(err);
+            url = null;
+        }
     }
 
     await insertTrack(allTracks, table);
