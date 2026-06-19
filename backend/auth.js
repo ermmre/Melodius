@@ -132,7 +132,7 @@ const insertTrack = async (tracks, table = 'tracks') => {
     }
 };
 
-const populateFromPlaylist = async (playlistID, table, minPop = 0, maxPop = 100) => {
+const populateFromPlaylist = async (playlistID, table, minPop = 70, maxPop = 100) => {
     const token = await accessToken();
     const allTracks = [];
     let url = `https://api.spotify.com/v1/playlists/${playlistID}/tracks?limit=100`;
