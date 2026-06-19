@@ -229,7 +229,7 @@ const populateFromPlaylist = async (playlistID, table, minPop = 70, maxPop = 100
             headers: { Authorization: 'Bearer ' + token }
         });
 
-        const text = await res.text();        
+        const text = await res.text();
         try {
             const data = JSON.parse(text);
             const filtered = data.items
@@ -367,9 +367,11 @@ app.post('/api/populate/2000s', async (req, res) => {
 });
 
 app.post('/api/populate/playlist', async (req, res) => {
+    if (req.headers['x-admin-key'] !== process.env.ADMIN_KEY) {
+        return res.status(401).json({ error: 'Unauthorized' });
+    }
     try {
-        await populateFromPlaylist('37i9dQZEVXbLRQDuF5jeBp', 'popular', 70, 100);
-        await populateFromPlaylist('37i9dQZF1EIdh6MgVIhb8B', '2000s', 60, 100);
+        await populateFromPlaylist('', '2000s', 60, 100);
         res.json({ message: 'Playlist populate done' });
     } catch (err) {
         console.log(err)
