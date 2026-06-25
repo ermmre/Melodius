@@ -9,6 +9,7 @@ import rateLimit from "express-rate-limit";
 dotenv.config();
 
 const app = express();
+const port = process.env.PORT || 3001;
 const limiter = rateLimit({
     windowMs: 15 * 60 * 1000,
     max: 100
@@ -367,7 +368,7 @@ app.post('/api/populate/playlist', async (req, res) => {
     }
 });
 
-app.listen(async () => {
+app.listen(port, async () => {
     console.log(`Server running`);
     await initializePool();
 });
