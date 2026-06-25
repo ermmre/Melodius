@@ -9,7 +9,6 @@ import rateLimit from 'express-rate-limit';
 dotenv.config();
 
 const app = express();
-const port = 3001;
 const limiter = rateLimit({
     windowMs: 15 * 60 * 1000,
     max: 100
@@ -53,6 +52,18 @@ await db.execute(`
 await db.execute(
     `
     CREATE TABLE IF NOT EXISTS 2000s (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        trackID VARCHAR(255) UNIQUE,
+        trackName VARCHAR(255),
+        artist VARCHAR(255),
+        trackPopularity INT,
+        albumURL TEXT 
+    )
+`);
+
+await db.execute(
+    `
+    CREATE TABLE IF NOT EXISTS latin (
         id INT AUTO_INCREMENT PRIMARY KEY,
         trackID VARCHAR(255) UNIQUE,
         trackName VARCHAR(255),
@@ -321,6 +332,16 @@ app.get('/api/2000s', async (req, res) => {
     }
 });
 
+app.get('/api/latin', async (req, res) =>  {
+    try {
+        const tracks = await getClosePair('latin');
+        res.json(tracks);
+    } catch (err) {
+        console.error('Error fetching tracks:', err);
+        res.status(500).json({ error: 'Failed to fetch latin tracks' })
+    }
+})
+
 app.post('/api/populate', async (req, res) => {
     if (req.headers['x-admin-key'] !== process.env.ADMIN_KEY) {
         return res.status(401).json({ error: 'Unauthorized' });
@@ -371,7 +392,7 @@ app.post('/api/populate/playlist', async (req, res) => {
         return res.status(401).json({ error: 'Unauthorized' });
     }
     try {
-        await populateFromPlaylist('', '2000s', 60, 100);
+        await populateFromPlaylist('', '', 40, 100);
         res.json({ message: 'Playlist populate done' });
     } catch (err) {
         console.log(err)
@@ -379,7 +400,7 @@ app.post('/api/populate/playlist', async (req, res) => {
     }
 });
 
-app.listen(port, async () => {
-    console.log(`Server running on http://localhost:${port}`);
+app.listen(async () => {
+    console.log(`Server running`);
     await initializePool();
 });
