@@ -23,24 +23,18 @@
 }
 
 .mode-select-title {
-    font-size: 45px;
+    font-size: 40px;
+    letter-spacing: 2px;
 }
 
 .mode-select-content {
     display: flex;
-    flex-direction: column;
+    flex-direction: row;
     align-items: center;
     text-align: center;
     margin-bottom: 20px;
     margin-top: 20px;
-}
-
-.mode-select-content p {
-    font-size: 18px;
-}
-
-.normal-mode {
-    margin-bottom: 30px;
+    gap: 40px;
 }
 
 .mode-button {
@@ -61,45 +55,48 @@
 }
 
 @keyframes pulse {
-    0% { box-shadow: 0 0 20px #fffff366, 0 0 40px #fffff333; transform: scale(0.97); }
-    50% { box-shadow: 0 0 30px #fffff3cc, 0 0 60px #fffff366; transform: scale(1)}
-    100% { box-shadow: 0 0 20px #fffff366, 0 0 40px #fffff333; transform: scale(0.97);}
-}
-
-.mode-row {
-    display: flex;
-    flex-direction: row;
-    gap: 70px;
-    align-items: center;
-    justify-content: center;
-    margin-top: 20px
-}
-
-.select {
-    font-size: 30px;
-    font-weight: normal;
-    text-transform: uppercase;
-    letter-spacing: 2px;
+    0% { box-shadow: 0 0 15px #fffff366, 0 0 30px #fffff333; transform: scale(0.97); }
+    50% { box-shadow: 0 0 20px #fffff3cc, 0 0 40px #fffff366; transform: scale(1); }
+    100% { box-shadow: 0 0 15px #fffff366, 0 0 30px #fffff333; transform: scale(0.97); }
 }
 
 .loading {
     display: flex;
-    flex-direction: column;
-    align-items: center;
     justify-content: center;
-    height: 600px;
+    animation: pulse-loading 0.8s ease-in-out infinite;
+}
+
+@keyframes pulse-loading {
+    0% { transform: scale(1); }
+    50% { transform: scale(0.9); }
+    100% { transform: scale(1); }
 }
 
 .loading-message {
     color: black;
     font-size: 35px;
+    text-transform: uppercase;
+    letter-spacing: 2px;
 }
 
 .header {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    margin-top: 40px;
+}
+
+.exit {
+    font-size: 20px;
+    color: #fffff3;
+    cursor: pointer;
+    background-color: transparent;
+    border: none;
+    border-radius: 20px;
+    padding: 10px;
+}
+
+.exit:hover {
+    opacity: 0.5;
 }
 
 .stats {
@@ -119,7 +116,7 @@
 }
 
 .score-flash {
-    animation: scorePop 0.4s ease;
+    animation: scorePop 0.5s ease;
 }
 
 @keyframes scorePop {
@@ -129,7 +126,7 @@
 }
 
 .score-wrong {
-    animation: scoreWrong 0.4s ease;
+    animation: scoreWrong 0.5s ease;
 }
 
 @keyframes scoreWrong {
@@ -139,7 +136,7 @@
 }
 
 .streak-up {
-    animation: streakPop 0.4s ease;
+    animation: streakPop 0.5s ease;
 }
 
 @keyframes streakPop {
@@ -149,7 +146,7 @@
 }
 
 .streak-reset {
-    animation: streakReset 0.4s ease;
+    animation: streakReset 0.5s ease;
 }
 
 @keyframes streakReset {
@@ -158,35 +155,9 @@
     100% { transform: scale(1); }
 }
 
-.game-question {
-    font-size: 35px;
-    color: black;
-    flex: 1;
-    text-align: center;
-    margin-top: 20px;
-    margin-bottom: 20px;
-}
-
-.correct-message {
-    color: #00ff88;
-}
-
-.wrong-message {
-    color: #ff4444;
-}
-
-.exit {
-    font-size: 20px;
+.round {
+    font-size: 30px;
     color: #fffff3;
-    cursor: pointer;
-    background-color: transparent;
-    border: none;
-    border-radius: 20px;
-    padding: 10px;
-}
-
-.exit:hover {
-    opacity: 0.5;
 }
 
 .timer {
@@ -204,78 +175,25 @@
 }
 
 @keyframes pulse-timer {
-    0% { text-shadow: 0 0 20px #fffff366, 0 0 40px #fffff333; transform: scale(1)}
-    50% { text-shadow: 0 0 30px #fffff3cc, 0 0 60px #fffff366; transform: scale(1.1)}
-    100% { text-shadow: 0 0 20px #fffff366, 0 0 40px #fffff333; transform: scale(1)}
+    0% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+    100% { transform: scale(1); }
 }
 
-.game-over, .start-screen {
-    display: flex;
-    flex-direction: column;
-    height: 850px;
-    align-items: center;
-    justify-content: center;
-    gap: 20px;
-}
-
-.game-over h1, .start-screen h1 {
-    font-size: 70px;
-}
-
-.gameover-text, .start-screen-text {
+.game-question {
     font-size: 35px;
-    color: #fffff3;
-}
-
-.gameover-message {
-    font-size: 25px;
-}
-
-.round {
-    font-size: 30px;
-    color: #fffff3;
-}
-
-.exit-button {
-    width: 210px;
-    padding: 15px;
-    font-size: 25px;
-    color: #fffff3;
-    background-color: #ff4444;
-    border: none;
-    border-radius: 30px;
-    cursor: pointer;
-}
-
-.exit-button:hover {
-    animation: pulse 1.2s ease-in-out infinite;
-}
-
-.pool-select {
-    display: flex;
-    gap: 30px;
-}
-
-.pool-option {
+    color: black;
     text-align: center;
-    align-items: center;
-    padding: 10px 20px;
-    width: 70px;
-    border: 2px solid #cbcbcb;
-    border-radius: 20px;
-    cursor: pointer;
-    color: #fffff3;
-    font-size: 20px;
+    margin-top: 20px;
+    margin-bottom: 20px;
 }
 
-.pool-option input[type="radio"] {
-    display: none;
+.correct-message {
+    color: #00ff88;
 }
 
-.pool-option.selected {
-    border-color: #fffff3;
-    background-color: rgba(255, 255, 255, 0.15);
-    animation: pulse 1.2s ease-in-out infinite;
+.wrong-message {
+    color: #ff4444;
 }
 
 .page-container {
@@ -358,6 +276,76 @@
 .popularity-score h1 {
     font-size: 24px;
     color: #fffff3;
+}
+
+.game-over, .start-screen {
+    display: flex;
+    flex-direction: column;
+    height: 850px;
+    align-items: center;
+    justify-content: center;
+    gap: 20px;
+}
+
+.game-over h1, .start-screen h1 {
+    font-size: 70px;
+}
+
+.gameover-text, .start-screen-text {
+    font-size: 35px;
+    color: #fffff3;
+}
+
+.gameover-message {
+    font-size: 25px;
+}
+
+.exit-button {
+    width: 210px;
+    padding: 15px;
+    font-size: 25px;
+    color: #fffff3;
+    background-color: #ff4444;
+    border: none;
+    border-radius: 30px;
+    cursor: pointer;
+}
+
+.exit-button:hover {
+    animation: pulse 1.2s ease-in-out infinite;
+}
+
+.pool-select {
+    display: flex;
+    gap: 30px;
+}
+
+.pool-option {
+    text-align: center;
+    align-items: center;
+    padding: 10px 20px;
+    width: 70px;
+    border: 2px solid #cbcbcb;
+    border-radius: 20px;
+    cursor: pointer;
+    color: #fffff3;
+    font-size: 20px;
+}
+
+.pool-option input[type="radio"] {
+    display: none;
+}
+
+.pool-option.selected {
+    border-color: #fffff3;
+    background-color: rgba(0, 0, 0, 0.20);
+    animation: pulse-option 1s ease-in-out infinite;
+}
+
+@keyframes pulse-option {
+    0% { transform: scale(0.96); }
+    50% { transform: scale(1); }
+    100% { transform: scale(0.96); }
 }
 
 @media (max-width: 768px) {

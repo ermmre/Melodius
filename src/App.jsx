@@ -1,38 +1,66 @@
 import { useState, useEffect, useRef } from "react";
 import './App.css'
 
+const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+const MAX_ROUNDS = 20;
+const TIME_SEC = 5;
+
 function App() {
+    // =========================
+    // MODE SETTINGS STATES
+    // =========================
+
     const [mode, setMode] = useState(null);
+    const [ready, setReady] = useState(false);
+    const [trackPool, setTrackPool] = useState('popular');
+    const [gameOver, setGameOver] = useState(false);
+
+    // =========================
+    // TRACK DATA STATES
+    // =========================
+
     const [trackPair, setTrackPair] = useState([null, null]);
     const [seenPairs, setSeenPairs] = useState(new Set());
+
+    // =========================
+    // GAMEPLAY STATS
+    // =========================
+
     const [message, setMessage] = useState('');
     const [correct, setCorrect] = useState(0);
-    const [loading, setLoading] = useState(true);
     const [streak, setStreak] = useState(0);
     const [gameBestStreak, setGameBestStreak] = useState(0);
+    const [timeLeft, setTimeLeft] = useState(TIME_SEC);
+    const [round, setRound] = useState(1);
+
+    // =========================
+    // VISUAL FEEDBACK
+    // =========================
+
+    const [showResult, setShowResult] = useState(false);
     const [flashLeft, setFlashLeft] = useState(null);
     const [flashRight, setFlashRight] = useState(null);
-    const [isTransitioning, setIsTransitioning] = useState(false);
-    const isTransitioningRef = useRef(false);
     const [scoreFlash, setScoreFlash] = useState(false);
     const [streakFlash, setStreakFlash] = useState(null);
-    const [showResult, setShowResult] = useState(false);
-    const [timeLeft, setTimeLeft] = useState(5);
-    const [round, setRound] = useState(1);
-    const [fastTrackReady, setFastTrackReady] = useState(false);
-    const [fastTrackPool, setFastTrackPool] = useState('popular');
-    const MAX_ROUNDS = 20;
+
+    // =========================
+    // LOADING & TRANSITIONS
+    // =========================
+
+    const [loading, setLoading] = useState(true);
+    const [isTransitioning, setIsTransitioning] = useState(false);
+    const isTransitioningRef = useRef(false);
     
-    const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+    // =========================
+    // FETCHING TRACKS FROM BACKEND
+    // =========================
+
+    const [trackOne, trackTwo] = trackPair;
+
     const fetchTracks = async () => {
-        const pool = mode === 'fast-track' ? fastTrackPool : mode;
-        const endpoint = 
-            pool === 'emo' ? '/api/emo' :
-            pool === '2000s' ? '/api/2000s' :
-            '/api/popular';
-        const response = await fetch(`${BASE_URL}${endpoint}`);
+        const response = await fetch(`${BASE_URL}/api/${trackPool}`);
         return await response.json(); 
-    }
+    };
 
     const getUnseenPair = async () => {
         let pair = await fetchTracks();
@@ -51,9 +79,13 @@ function App() {
         return pair;
     };
 
+    // =========================
+    // GAMEPLAY LOGIC
+    // =========================   
+
     useEffect(() => {
         if (!mode) return;
-        if (mode === 'fast-track' && !fastTrackReady) return;
+        if (!ready) return;
         const init = async () => {
             try {
                 setShowResult(false);
@@ -61,12 +93,31 @@ function App() {
                 setTrackPair(pair);
                 setLoading(false);
             } catch (error) {
-                console.error("Uh oh", error);
+                console.error("An error occured:", error);
             }
         };
+
         init();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [mode, fastTrackReady]);
+    }, [mode, ready]);
+    
+    const advanceRound = async () => {
+        if (round >= MAX_ROUNDS) {
+            setGameOver(true);
+            return;
+        }
+
+        const pair = await getUnseenPair();
+        setTrackPair(pair);
+        setFlashLeft(null);
+        setFlashRight(null);
+        setShowResult(false);
+        setMessage('');
+        setTimeLeft(TIME_SEC);
+        setRound(r => r + 1);
+        setIsTransitioning(false);
+        isTransitioningRef.current = false;
+    };
 
     const handleTimeout = async () => {
         if (isTransitioningRef.current) return;
@@ -77,24 +128,7 @@ function App() {
         setFlashRight('wrong');
 
         await new Promise(resolve => setTimeout(resolve, 1500));
-
-        if (round >= MAX_ROUNDS) {
-            setGameOver(true);
-            isTransitioningRef.current = false;
-            return;
-        }
-
-        const pair = await getUnseenPair();
-        setTrackPair(pair);
-
-        setFlashLeft(null);
-        setFlashRight(null);
-        setMessage('');
-        setRound(r => r + 1);
-        setTimeLeft(5);
-
-        setIsTransitioning(false);
-        isTransitioningRef.current = false;
+        await advanceRound();
     };
 
     useEffect(() => {
@@ -117,14 +151,13 @@ function App() {
         isTransitioningRef.current = true;
         setIsTransitioning(true);
 
-        const [trackOne, trackTwo] = trackPair;
         const isCorrect =
-        (choice === 'left' && trackOne.trackPopularity > trackTwo.trackPopularity) ||
-        (choice === 'right' && trackTwo.trackPopularity > trackOne.trackPopularity);
+        (choice === 'left' && 
+            trackOne.trackPopularity > trackTwo.trackPopularity) ||
+        (choice === 'right' && 
+            trackTwo.trackPopularity > trackOne.trackPopularity);
 
-        setMessage(
-            `${isCorrect ? 'Correct!' : 'Incorrect!'}`
-        );
+        setMessage(isCorrect ? 'Correct!' : 'Incorrect!');
 
         if (isCorrect) {
             setCorrect(c => c + 1);
@@ -140,12 +173,13 @@ function App() {
             if (streak > 0) setStreakFlash('reset');
             setStreak(0);
         }
+
         setTimeout(() => setScoreFlash(null), 400);
         setTimeout(() => setStreakFlash(null), 500);
 
         if (choice === 'left') {
-        setFlashLeft(isCorrect ? 'correct' : 'wrong');
-        setFlashRight(isCorrect ? 'wrong' : 'correct');
+            setFlashLeft(isCorrect ? 'correct' : 'wrong');
+            setFlashRight(isCorrect ? 'wrong' : 'correct');
         } else {
             setFlashRight(isCorrect ? 'correct' : 'wrong');
             setFlashLeft(isCorrect ? 'wrong' : 'correct');
@@ -153,26 +187,35 @@ function App() {
         
         setShowResult(true);
         await new Promise(resolve => setTimeout(resolve, 1700));
+        await advanceRound();
+    };
 
-        if (round >= MAX_ROUNDS) {
-            setGameOver(true);
-            return;
-        }
+    const resetGame = (toMenu = false) => {
+        if (toMenu) setMode(null);
+        setTrackPool('popular')
+        setReady(false);
 
-        const pair = await getUnseenPair();
-        setTrackPair(pair);
-
+        setShowResult(false);
         setFlashLeft(null);
         setFlashRight(null);
-        setShowResult(false);
+        setMessage('');
+        setCorrect(0);
+        setStreak(0);
+        setGameBestStreak(0);
+        setRound(1);
+        setGameOver(false);
         
         setTimeLeft(5);
-        setRound(r => r + 1);
-
-        setMessage('');
+        setLoading(true);
         setIsTransitioning(false);
         isTransitioningRef.current = false;
-    }
+
+        setTrackPair([null, null]);
+        setSeenPairs(new Set());
+    };
+
+    const handleExit = () => resetGame(true);
+    const handlePlayAgain = () => resetGame(false);
 
     const getGameOverMessage = () => {
         if (correct === MAX_ROUNDS) return "20 lucky guesses?";
@@ -184,48 +227,9 @@ function App() {
         return "Ouch... how did you manage that?";
     };
 
-    const handleExit = () => {
-        setMode(null); // only difference between the two, but necessary
-
-        setShowResult(false);
-        setIsTransitioning(false);
-        isTransitioningRef.current = false;
-        setFlashLeft(null);
-        setFlashRight(null);
-        setTrackPair([null, null]);
-        setSeenPairs(new Set());
-        setMessage('');
-        setCorrect(0);
-        setStreak(0);
-        setGameBestStreak(0);
-        setLoading(true);
-        setRound(1);
-        setTimeLeft(5);
-        setGameOver(false);
-        setFastTrackReady(false);
-    };
-
-    const handlePlayAgain = () => {
-        setShowResult(false);
-        setIsTransitioning(false);
-        isTransitioningRef.current = false;
-        setFlashLeft(null);
-        setFlashRight(null);
-        setTrackPair([null, null]);
-        setSeenPairs(new Set());
-        setMessage('');
-        setCorrect(0);
-        setStreak(0);
-        setGameBestStreak(0);
-        setLoading(true);
-        setRound(1);
-        setTimeLeft(5);
-        setGameOver(false);
-        setFastTrackReady(false);
-    };
-
-    const [trackOne, trackTwo] = trackPair;
-    const [gameOver, setGameOver] = useState(false);
+    // =========================
+    // RENDER GAME OVER SCREEN
+    // =========================  
 
     if (gameOver) {
         return (
@@ -244,50 +248,9 @@ function App() {
         );
     }
 
-    if (mode === 'fast-track' && !fastTrackReady) return (
-        <div className="start-screen">
-            <h1>Ready?</h1>
-            <p className="start-screen-text">5 seconds to guess the right song.</p>
-            <div className="pool-select">
-                <label className={`pool-option ${fastTrackPool === 'popular' ? 'selected' : ''}`}>
-                    <input 
-                        type="radio" 
-                        name="pool" 
-                        value="popular"
-                        checked={fastTrackPool === 'popular'}
-                        onChange={() => setFastTrackPool('popular')}
-                    />
-                    Infinite
-                </label>
-                <label className={`pool-option ${fastTrackPool === 'emo' ? 'selected' : ''}`}>
-                    <input 
-                        type="radio" 
-                        name="pool" 
-                        value="emo"
-                        checked={fastTrackPool === 'emo'}
-                        onChange={() => setFastTrackPool('emo')}
-                    />
-                    Emo
-                </label>
-                <label className={`pool-option ${fastTrackPool === '2000s' ? 'selected' : ''}`}>
-                    <input 
-                        type="radio" 
-                        name="pool" 
-                        value="2000s"
-                        checked={fastTrackPool === '2000s'}
-                        onChange={() => setFastTrackPool('2000s')}
-                    />
-                    2000s
-                </label>
-            </div>
-            <button className="mode-button" onClick={() => setFastTrackReady(true)}>
-                Start
-            </button>
-            <button onClick={handleExit} className="exit-button">
-                Exit
-            </button>
-        </div>
-    );
+    // =========================
+    // RENDER MODE SELECT SCREEN
+    // =========================  
 
     if (!mode) {
         return (
@@ -297,34 +260,15 @@ function App() {
             <div className="mode-select">
                 <h2 className="mode-select-title">Mode Select</h2>
                 <div className="mode-select-content">
-                    <h2 className="select">Normal</h2>
                     <div className="normal-mode">
-                        <button className="mode-button" onClick={() => setMode('popular')}>
+                        <button className="mode-button" onClick={() => setMode('infinite')}>
                             Infinite
                         </button>
-                        <p>Collection of all songs in rotation.</p>
                     </div>
                     <div className="normal-mode">
                         <button className="mode-button" onClick={() => setMode('fast-track')}>
                             Fast Track
                         </button>
-                        <p>5 seconds to guess the correct track.</p>
-                    </div>
-                </div>
-                <div className="mode-row">
-                    <div className="genre-mode">
-                        <h2 className="select ">Genre</h2>
-                        <button className="mode-button" onClick={() => setMode('emo')}>
-                            Emo
-                        </button>
-                        <p>A collection of emo songs to compare.</p>
-                    </div>
-                    <div className="year-mode">
-                        <h2 className="select ">Year</h2>
-                        <button className="mode-button" onClick={() => setMode('2000s')}>
-                            2000s
-                        </button>
-                        <p>A collection of 2000s songs to compare.</p>
                     </div>
                 </div>
             </div>
@@ -332,14 +276,85 @@ function App() {
         )
     }
 
-    if (loading || !trackOne || !trackTwo) return (
-        <>
-        <div className="loading">
-            <h1 className="loading-message">Loading...</h1>
+    // =========================
+    // RENDER READY SCREEN
+    // =========================  
 
+    if (!ready) return (
+        <div className="start-screen">
+            <h1>Ready?</h1>
+            {mode === 'infinite' && (
+                <p className="start-screen-text"> No limits. How many will you get right?</p>
+            )}
+            {mode === 'fast-track' && (
+                <p className="start-screen-text">5 seconds to guess the right song.</p>
+            )}
+            <div className="pool-select">
+                <label className={`pool-option ${trackPool === 'popular' ? 'selected' : ''}`}>
+                    <input 
+                        type="radio" 
+                        name="pool" 
+                        value="popular"
+                        checked={trackPool === 'popular'}
+                        onChange={() => setTrackPool('popular')}
+                    />
+                    Popular
+                </label>
+                <label className={`pool-option ${trackPool === 'emo' ? 'selected' : ''}`}>
+                    <input 
+                        type="radio" 
+                        name="pool" 
+                        value="emo"
+                        checked={trackPool === 'emo'}
+                        onChange={() => setTrackPool('emo')}
+                    />
+                    Emo
+                </label>
+                <label className={`pool-option ${trackPool === '2000s' ? 'selected' : ''}`}>
+                    <input 
+                        type="radio" 
+                        name="pool" 
+                        value="2000s"
+                        checked={trackPool === '2000s'}
+                        onChange={() => setTrackPool('2000s')}
+                    />
+                    2000s
+                </label>
+                <label className={`pool-option ${trackPool === 'latin' ? 'selected' : ''}`}>
+                    <input 
+                        type="radio" 
+                        name="pool" 
+                        value="latin"
+                        checked={trackPool === 'latin'}
+                        onChange={() => setTrackPool('latin')}
+                    />
+                    Latin
+                </label>
+            </div>
+            <button className="mode-button" onClick={() => setReady(true)}>
+                Start
+            </button>
+            <button onClick={handleExit} className="exit-button">
+                Exit
+            </button>
         </div>
-        </>
-    )
+    );
+
+    // =========================
+    // RENDER LOADING SCREEN 
+    // =========================  
+
+    if (loading || !trackOne || !trackTwo) { 
+        return (
+            <div className="loading">
+                <h1 className="loading-message">Loading...</h1>
+            </div>
+        );
+    }
+
+    // =========================
+    // RENDER GAMEPLAY SCREEN
+    // =========================
 
     return (
         <>
